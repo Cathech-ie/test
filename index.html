@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pay Period Planner</title>
+  <style>
+    :root {
+      --green: #2e8b57;
+      --red: #d9534f;
+      --yellow: #f0ad4e;
+      --gray: #9e9e9e;
+      --blue: #3b82f6;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --border: #dbe0ea;
+      --text: #1f2933;
+      --muted: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: linear-gradient(120deg, #0ea5e9, #6366f1);
+      color: #fff;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.4px;
+    }
+
+    .pill {
+      display: inline-flex;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .pill button {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.2px;
+    }
+
+    .pill button.active, .pill button:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    main {
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto 48px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 18px 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(31, 41, 51, 0.08);
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      background: #f9fafb;
+      transition: border 0.2s ease, background 0.2s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    button.primary {
+      background: linear-gradient(120deg, #3b82f6, #6366f1);
+      color: #fff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.25);
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      padding-top: 10px;
+    }
+
+    .day {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      min-height: 80px;
+      font-size: 12px;
+      position: relative;
+    }
+
+    .day strong {
+      font-size: 12px;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      margin: 2px 0;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .chip.bill { background: var(--yellow); color: #1f2933; }
+    .chip.paid { background: var(--green); color: #fff; }
+    .chip.overdue { background: var(--red); }
+    .chip.current { background: var(--yellow); color: #1f2933; }
+    .chip.future { background: var(--gray); }
+    .chip.paycheck { background: #10b981; }
+
+    .list-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .list-item .info {
+      flex: 1;
+    }
+
+    .list-item small {
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      display: inline-block;
+    }
+
+    .status-paid { background: var(--green); }
+    .status-overdue { background: var(--red); }
+    .status-current { background: var(--yellow); }
+    .status-future { background: var(--gray); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    table th, table td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    table th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .note {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bill Calendar & Paycheck Log</h1>
+    <div class="pill" id="tabPill">
+      <button data-tab="calendar" class="active">🗓 Log & Calendar</button>
+      <button data-tab="fixed">🏠 Fixed Bills</button>
+      <button data-tab="variable">💳 Variable Envelopes</button>
+      <button data-tab="sinking">💰 Sinking Funds</button>
+    </div>
+  </header>
+  <main>
+    <section id="calendar" class="tab">
+      <div class="card">
+        <div class="toolbar">
+          <h2>Bill Calendar</h2>
+          <div class="flex-row">
+            <button class="secondary" id="addBillBtn">＋ Add Bill</button>
+            <button class="secondary" id="addPaycheckBtn">＋ Add Paycheck</button>
+            <button class="primary" id="notificationBtn">Enable Reminders</button>
+          </div>
+        </div>
+        <div class="note">Paid dates are green, past due red, current due yellow, and future gray.</div>
+        <div class="calendar" id="calendarGrid"></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="section-title">
+            <h2>Due Filters</h2>
+            <select id="payPeriodSelector"></select>
+          </div>
+          <div id="sortedBills"></div>
+        </div>
+        <div class="card">
+          <h2>Payment Log</h2>
+          <div id="paymentLog"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="fixed" class="tab" style="display:none;">
+      <div class="toolbar">
+        <h2>Fixed Bills Allocation</h2>
+        <div class="flex-row">
+          <button class="secondary" id="addFixedBill">＋ Add Fixed Bill</button>
+          <select id="fixedPayPeriod"></select>
+        </div>
+      </div>
+      <div class="note">Plan by pay period spans set from your paychecks. Changes apply when you submit.</div>
+      <div class="card">
+        <div class="section-title">
+          <h2>Plan Allocations</h2>
+          <button class="primary" id="submitFixedPlan">Submit Plan</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Bill</th><th>Due</th><th>Planned Amount</th><th>Committed</th></tr>
+          </thead>
+          <tbody id="fixedTable"></tbody>
+        </table>
+        <div class="note" id="fixedBalance"></div>
+      </div>
+    </section>
+
+    <section id="variable" class="tab" style="display:none;">
+      <div class="toolbar">
+        <h2>Variable Expense Envelopes</h2>
+        <div class="flex-row">
+          <button class="secondary" id="addEnvelope">＋ Add Envelope</button>
+          <select id="variablePayPeriod"></select>
+        </div>
+      </div>
+      <div class="note">Reset or refill every paycheck. Decide on rollovers at the end of each period.</div>
+      <div class="card">
+        <div class="section-title">
+          <h2>Plan Allocations</h2>
+          <button class="primary" id="submitVariablePlan">Submit Plan</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Category</th><th>Current Total</th><th>Plan Add</th><th>Log Spend</th><th>Notes / Spend Tags</th></tr>
+          </thead>
+          <tbody id="variableTable"></tbody>
+        </table>
+        <div class="note" id="variableBalance"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <h2>Weekly Variable Spend</h2>
+          <div class="note">Track expense totals by week for envelopes only.</div>
+        </div>
+        <div id="variableSpendLog"></div>
+      </div>
+    </section>
+
+    <section id="sinking" class="tab" style="display:none;">
+      <div class="toolbar">
+        <h2>Sinking Funds</h2>
+        <div class="flex-row">
+          <button class="secondary" id="addSinking">＋ Add Sinking Fund</button>
+          <select id="sinkingPayPeriod"></select>
+        </div>
+      </div>
+      <div class="note">Accumulate steadily for predictable and unexpected costs. Purchases allow sub-items.</div>
+      <div class="card">
+        <div class="section-title">
+          <h2>Plan Allocations</h2>
+          <button class="primary" id="submitSinkingPlan">Submit Plan</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Fund</th><th>Target / Notes</th><th>Plan Add</th><th>Current Total</th></tr>
+          </thead>
+          <tbody id="sinkingTable"></tbody>
+        </table>
+        <div class="note" id="sinkingBalance"></div>
+      </div>
+
+      <div class="card">
+        <h2>Transfers</h2>
+        <div class="grid">
+          <div>
+            <label for="transferFrom">From</label>
+            <select id="transferFrom"></select>
+          </div>
+          <div>
+            <label for="transferTo">To</label>
+            <select id="transferTo"></select>
+          </div>
+          <div>
+            <label for="transferAmount">Amount</label>
+            <input type="number" id="transferAmount" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="flex-row" style="margin-top:10px;">
+          <button class="primary" id="submitTransfer">Transfer</button>
+          <div class="note">Move funds between envelopes and sinking funds as needed.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const today = todayISO();
+
+    const state = {
+      bills: [
+        { id: 'rent', name: 'Rent', icon: '🏠', dueDate: today, frequency: 'monthly', amount: 1450, variable: false, reminder: true },
+        { id: 'electric', name: 'Electric', icon: '💡', dueDate: today, frequency: 'monthly', amount: 120, variable: true, reminder: true },
+        { id: 'internet', name: 'Internet', icon: '🌐', dueDate: today, frequency: 'monthly', amount: 60, variable: false, reminder: true }
+      ],
+      paychecks: [
+        { id: 'paycheck-1', company: 'Acme Co.', date: today, amount: 2200, frequency: 'biweekly', coverage: '2-week span' }
+      ],
+      payments: [],
+      variableSpends: [],
+      variableEnvelopes: [
+        { id: 'groceries', name: 'Groceries & Household', total: 0, notes: [] },
+        { id: 'gas', name: 'Gas / Transportation', total: 0, notes: [] },
+        { id: 'dining', name: 'Eating / Dining Out', total: 0, notes: [] },
+        { id: 'debts', name: 'Debts', total: 0, notes: [] },
+        { id: 'personal', name: 'Personal Care', total: 0, notes: [] },
+        { id: 'misc', name: 'Miscellaneous', total: 0, notes: [] }
+      ],
+      sinkingFunds: [
+        { id: 'purchases', name: 'Purchases', total: 0, notes: [], type: 'parent', children: [] },
+        { id: 'car', name: 'Car Maintenance', total: 0, notes: [] },
+        { id: 'medical', name: 'Medical', total: 0, notes: [] },
+        { id: 'subscriptions', name: 'Annual Subscriptions', total: 0, notes: [] },
+        { id: 'gifts', name: 'Holidays / Gifts', total: 0, notes: [] },
+        { id: 'travel', name: 'Travel / Vacations', total: 0, notes: [] },
+        { id: 'home', name: 'Home Repairs / Upgrades', total: 0, notes: [] },
+        { id: 'fixed-buffer', name: 'Fixed Bills Buffer', total: 0, notes: [] },
+        { id: 'variable-buffer', name: 'Variable Expense Buffer', total: 0, notes: [] },
+        { id: 'emergency', name: 'Emergency Fund', total: 0, notes: [] },
+        { id: 'savings', name: 'Savings / Debt Payment', total: 0, notes: [] }
+      ],
+      plans: {},
+      remindersEnabled: false
+    };
+
+    const tabs = document.querySelectorAll('#tabPill button');
+    tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(el => el.style.display = 'none');
+      document.getElementById(tab).style.display = 'block';
+      tabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    }
+
+    function uid(prefix) {
+      return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function todayISO() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function parseDate(value) {
+      return new Date(value + 'T00:00:00');
+    }
+
+    function formatDate(value) {
+      return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+
+    function getPayPeriod(paycheck) {
+      const start = parseDate(paycheck.date);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 13);
+      return { start, end };
+    }
+
+    function ensurePlan(paycheckId) {
+      if (!state.plans[paycheckId]) {
+        const paycheck = state.paychecks.find(p => p.id === paycheckId);
+        state.plans[paycheckId] = {
+          fixed: {},
+          variable: {},
+          sinking: {},
+          committed: { fixed: {}, variable: {}, sinking: {} },
+          available: paycheck ? paycheck.amount : 0
+        };
+      }
+      return state.plans[paycheckId];
+    }
+
+    function refreshPayPeriodSelectors() {
+      const selectors = [document.getElementById('payPeriodSelector'), document.getElementById('fixedPayPeriod'), document.getElementById('variablePayPeriod'), document.getElementById('sinkingPayPeriod')];
+      selectors.forEach(sel => {
+        const previous = sel.value;
+        sel.innerHTML = '';
+        state.paychecks.forEach(p => {
+          const opt = document.createElement('option');
+          const { start, end } = getPayPeriod(p);
+          opt.value = p.id;
+          opt.textContent = `${p.company} • ${formatDate(start)} - ${formatDate(end)} • $${p.amount.toFixed(2)}`;
+          sel.appendChild(opt);
+        });
+        if (previous && [...sel.options].some(o => o.value === previous)) {
+          sel.value = previous;
+        } else if (sel.options.length) {
+          sel.selectedIndex = 0;
+        }
+      });
+    }
+
+    function renderCalendar() {
+      const container = document.getElementById('calendarGrid');
+      container.innerHTML = '';
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDay = start.getDay();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      for (let i = 0; i < firstDay; i++) container.appendChild(document.createElement('div'));
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('div');
+        cell.className = 'day';
+        const date = new Date(now.getFullYear(), now.getMonth(), day);
+        const iso = date.toISOString().split('T')[0];
+        const label = document.createElement('strong');
+        label.textContent = day;
+        cell.appendChild(label);
+        state.bills.filter(b => b.dueDate === iso).forEach(bill => {
+          const chip = document.createElement('div');
+          chip.className = `chip bill ${statusClass(bill)}`;
+          chip.textContent = `${bill.icon || '📄'} ${bill.name}`;
+          chip.title = `Amount: ${bill.amount ? `$${bill.amount}` : 'Varies'}`;
+          chip.addEventListener('click', () => logPayment(bill.id));
+          cell.appendChild(chip);
+        });
+        state.paychecks.filter(p => p.date === iso).forEach(pc => {
+          const chip = document.createElement('div');
+          chip.className = 'chip paycheck';
+          chip.textContent = `💵 ${pc.company}`;
+          cell.appendChild(chip);
+        });
+        container.appendChild(cell);
+      }
+    }
+
+    function statusClass(bill) {
+      const today = parseDate(todayISO());
+      const due = parseDate(bill.dueDate);
+      const paid = state.payments.some(p => p.billId === bill.id && p.remaining === 0);
+      if (paid) return 'paid';
+      if (due < today) return 'overdue';
+      const { start, end } = activePayPeriod();
+      if (start && due >= start && due <= end) return 'current';
+      return 'future';
+    }
+
+    function activePayPeriod() {
+      const selector = document.getElementById('payPeriodSelector');
+      if (!selector.value) return {};
+      const paycheck = state.paychecks.find(p => p.id === selector.value);
+      return paycheck ? getPayPeriod(paycheck) : {};
+    }
+
+    function renderSortedBills() {
+      const container = document.getElementById('sortedBills');
+      container.innerHTML = '';
+      const { start, end } = activePayPeriod();
+      const today = parseDate(todayISO());
+      const sections = [
+        { label: 'Overdue', filter: bill => parseDate(bill.dueDate) < today, status: 'overdue' },
+        { label: 'Currently Due', filter: bill => start && parseDate(bill.dueDate) >= start && parseDate(bill.dueDate) <= end, status: 'current' },
+        { label: 'Upcoming in Pay Period', filter: bill => end && parseDate(bill.dueDate) > end, status: 'future' }
+      ];
+      sections.forEach(sec => {
+        const title = document.createElement('h3');
+        title.textContent = sec.label;
+        container.appendChild(title);
+        state.bills.filter(sec.filter).forEach(bill => container.appendChild(renderBillRow(bill, sec.status)));
+        if (!state.bills.some(sec.filter)) {
+          const empty = document.createElement('div');
+          empty.className = 'note';
+          empty.textContent = 'No items';
+          container.appendChild(empty);
+        }
+      });
+    }
+
+    function renderBillRow(bill, status) {
+      const row = document.createElement('div');
+      row.className = 'list-item';
+      const dot = document.createElement('span');
+      dot.className = `status-dot status-${statusClass(bill)}`;
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = `<strong>${bill.icon || '📄'} ${bill.name}</strong><br><small>Due ${formatDate(bill.dueDate)} • ${bill.frequency}</small>`;
+      const actions = document.createElement('div');
+      actions.className = 'flex-row';
+      const logBtn = document.createElement('button');
+      logBtn.className = 'secondary';
+      logBtn.textContent = 'Log Payment';
+      logBtn.onclick = () => logPayment(bill.id);
+      actions.appendChild(logBtn);
+      row.append(dot, info, actions);
+      return row;
+    }
+
+    function logPayment(billId) {
+      const bill = state.bills.find(b => b.id === billId);
+      if (!bill) return;
+      const amountPaid = parseFloat(prompt(`Payment amount for ${bill.name}`, bill.amount || 0));
+      if (isNaN(amountPaid)) return;
+      let remaining = (bill.amount || amountPaid) - amountPaid;
+      if (remaining < 0) remaining = 0;
+      if (remaining > 0) {
+        const postpone = prompt(`Remaining $${remaining.toFixed(2)}. When to postpone to? (YYYY-MM-DD)`, bill.dueDate);
+        if (postpone) {
+          const newBill = { ...bill, id: uid('bill'), dueDate: postpone, name: `${bill.name} (cont.)` };
+          state.bills.push(newBill);
+        }
+      }
+      state.payments.push({ id: uid('pay'), billId, amount: amountPaid, remaining, date: todayISO() });
+      render();
+    }
+
+    function renderPaymentLog() {
+      const container = document.getElementById('paymentLog');
+      container.innerHTML = '';
+      state.payments.slice().reverse().forEach(pay => {
+        const bill = state.bills.find(b => b.id === pay.billId) || { name: 'Bill' };
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `<div class="info"><strong>${bill.name}</strong><br><small>${formatDate(pay.date)} • Paid $${pay.amount.toFixed(2)}${pay.remaining ? ` • $${pay.remaining.toFixed(2)} left` : ''}</small></div>`;
+        container.appendChild(item);
+      });
+      if (!state.payments.length) container.innerHTML = '<div class="note">No payments logged yet.</div>';
+    }
+
+    function addBill() {
+      const name = prompt('Bill name');
+      if (!name) return;
+      const icon = prompt('Icon (emoji or short text)', '📄');
+      const dueDate = prompt('Due date (YYYY-MM-DD)', todayISO());
+      const frequency = prompt('Frequency (e.g., monthly, biweekly, custom)', 'monthly');
+      const amount = parseFloat(prompt('Amount (leave blank if varies)', '')); 
+      const variable = confirm('Does amount vary? OK = yes');
+      const reminder = confirm('Reminder on?');
+      state.bills.push({ id: uid('bill'), name, icon, dueDate, frequency, amount: isNaN(amount) ? null : amount, variable, reminder });
+      render();
+    }
+
+    function addPaycheck() {
+      const company = prompt('Paycheck source/company');
+      if (!company) return;
+      const date = prompt('Paycheck date (YYYY-MM-DD)', todayISO());
+      const amount = parseFloat(prompt('Amount received', '0'));
+      const frequency = prompt('Frequency (e.g., biweekly, monthly, custom)', 'biweekly');
+      const coverage = '2-week span';
+      state.paychecks.push({ id: uid('paycheck'), company, date, amount: isNaN(amount) ? 0 : amount, frequency, coverage });
+      refreshPayPeriodSelectors();
+      render();
+    }
+
+    function renderFixed() {
+      const tbody = document.getElementById('fixedTable');
+      tbody.innerHTML = '';
+      const payId = document.getElementById('fixedPayPeriod').value;
+      if (!payId) { tbody.innerHTML = '<tr><td colspan="4">Add a paycheck to start planning.</td></tr>'; return; }
+      const plan = ensurePlan(payId);
+      const paycheck = state.paychecks.find(p => p.id === payId);
+      const period = getPayPeriod(paycheck);
+      const relevantBills = state.bills.filter(b => {
+        const due = parseDate(b.dueDate);
+        return due >= period.start && due <= period.end;
+      });
+      relevantBills.forEach(bill => {
+        const row = document.createElement('tr');
+        const plannedVal = plan.fixed[bill.id] || 0;
+        const committedVal = plan.committed.fixed[bill.id] || 0;
+        row.innerHTML = `
+          <td>${bill.name}</td>
+          <td>${formatDate(bill.dueDate)}</td>
+          <td><input type="number" min="0" step="0.01" value="${plannedVal}" data-bill="${bill.id}" class="fixed-plan"></td>
+          <td>$${committedVal.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+      });
+      document.getElementById('fixedBalance').textContent = `Running total available: $${plan.available.toFixed(2)} (updates after submit).`;
+      tbody.querySelectorAll('.fixed-plan').forEach(inp => inp.addEventListener('change', e => {
+        plan.fixed[e.target.dataset.bill] = parseFloat(e.target.value) || 0;
+      }));
+    }
+
+    function renderVariable() {
+      const tbody = document.getElementById('variableTable');
+      tbody.innerHTML = '';
+      const payId = document.getElementById('variablePayPeriod').value;
+      if (!payId) { tbody.innerHTML = '<tr><td colspan="5">Add a paycheck to start planning.</td></tr>'; return; }
+      const plan = ensurePlan(payId);
+      state.variableEnvelopes.forEach(env => {
+        const plannedVal = plan.variable[env.id] || 0;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${env.name}</td>
+          <td>$${env.total.toFixed(2)}</td>
+          <td><input type="number" min="0" step="0.01" value="${plannedVal}" data-env="${env.id}" class="variable-plan"></td>
+          <td><button class="secondary" data-log="${env.id}">Log Spend</button></td>
+          <td>
+            <textarea placeholder="Add tags for this envelope (comma separated)">${env.notes.join(', ')}</textarea>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+      document.getElementById('variableBalance').textContent = `Running total available: $${plan.available.toFixed(2)} (updates after submit).`;
+      tbody.querySelectorAll('.variable-plan').forEach(inp => inp.addEventListener('change', e => {
+        plan.variable[e.target.dataset.env] = parseFloat(e.target.value) || 0;
+      }));
+      tbody.querySelectorAll('button[data-log]').forEach(btn => btn.addEventListener('click', () => logEnvelopeSpend(btn.dataset.log)));
+      tbody.querySelectorAll('textarea').forEach((area, idx) => area.addEventListener('change', () => {
+        state.variableEnvelopes[idx].notes = area.value.split(',').map(n => n.trim()).filter(Boolean);
+      }));
+    }
+
+    function logEnvelopeSpend(envId) {
+      const env = state.variableEnvelopes.find(e => e.id === envId);
+      if (!env) return;
+      const amount = parseFloat(prompt(`How much did you spend from ${env.name}?`, '0'));
+      if (isNaN(amount) || amount <= 0) return;
+      if (amount > env.total) {
+        const proceed = confirm('This exceeds the envelope total. Continue?');
+        if (!proceed) return;
+      }
+      const note = prompt('Add a tag or note for this spend (optional)') || '';
+      env.total = Math.max(0, env.total - amount);
+      state.variableSpends.push({ id: uid('spend'), envId, amount, note, date: todayISO() });
+      render();
+    }
+
+    function weekStart(date) {
+      const d = new Date(date + 'T00:00:00');
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1) - day; // start Monday
+      d.setDate(d.getDate() + diff);
+      return d.toISOString().split('T')[0];
+    }
+
+    function renderVariableSpendLog() {
+      const container = document.getElementById('variableSpendLog');
+      container.innerHTML = '';
+      if (!state.variableSpends.length) {
+        container.innerHTML = '<div class="note">No variable expenses logged yet.</div>';
+        return;
+      }
+      const grouped = state.variableSpends.reduce((acc, spend) => {
+        const key = weekStart(spend.date);
+        acc[key] = acc[key] || [];
+        acc[key].push(spend);
+        return acc;
+      }, {});
+      Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0])).forEach(([week, spends]) => {
+        const block = document.createElement('div');
+        block.className = 'list-item';
+        const end = new Date(week + 'T00:00:00');
+        end.setDate(end.getDate() + 6);
+        const total = spends.reduce((sum, s) => sum + s.amount, 0);
+        block.innerHTML = `<div class="info"><strong>Week of ${formatDate(week)} - ${formatDate(end.toISOString().split('T')[0])}</strong><br><small>${spends.length} spends • $${total.toFixed(2)}</small></div>`;
+        const details = document.createElement('div');
+        details.innerHTML = spends.map(s => {
+          const env = state.variableEnvelopes.find(e => e.id === s.envId) || { name: 'Envelope' };
+          return `<div class="note">${formatDate(s.date)} • ${env.name} • $${s.amount.toFixed(2)}${s.note ? ` • ${s.note}` : ''}</div>`;
+        }).join('');
+        block.appendChild(details);
+        container.appendChild(block);
+      });
+    }
+
+    function renderSinking() {
+      const tbody = document.getElementById('sinkingTable');
+      tbody.innerHTML = '';
+      const payId = document.getElementById('sinkingPayPeriod').value;
+      if (!payId) { tbody.innerHTML = '<tr><td colspan="4">Add a paycheck to start planning.</td></tr>'; return; }
+      const plan = ensurePlan(payId);
+      state.sinkingFunds.forEach(fund => {
+        const plannedVal = plan.sinking[fund.id] || 0;
+        const row = document.createElement('tr');
+        const isPurchase = fund.id === 'purchases';
+        const childNote = isPurchase ? `<div class="note">Mini purchases: ${(fund.children || []).map(c => c.name).join(', ') || 'Add with the button'}</div>` : '';
+        row.innerHTML = `
+          <td>${fund.name}</td>
+          <td>${childNote || (fund.notes.join(', ') || '—')}</td>
+          <td><input type="number" min="0" step="0.01" value="${plannedVal}" data-fund="${fund.id}" class="sinking-plan"></td>
+          <td>$${fund.total.toFixed(2)}</td>
+        `;
+        tbody.appendChild(row);
+      });
+      document.getElementById('sinkingBalance').textContent = `Running total available: $${plan.available.toFixed(2)} (updates after submit).`;
+      tbody.querySelectorAll('.sinking-plan').forEach(inp => inp.addEventListener('change', e => {
+        plan.sinking[e.target.dataset.fund] = parseFloat(e.target.value) || 0;
+      }));
+    }
+
+    function submitPlan(type) {
+      const selectorId = type === 'fixed' ? 'fixedPayPeriod' : type === 'variable' ? 'variablePayPeriod' : 'sinkingPayPeriod';
+      const payId = document.getElementById(selectorId).value;
+      if (!payId) return alert('Add a paycheck first.');
+      const plan = ensurePlan(payId);
+      const planned = plan[type];
+      let total = Object.values(planned).reduce((a, b) => a + b, 0);
+      if (total > plan.available) {
+        const proceed = confirm('This plan exceeds available paycheck funds. Continue?');
+        if (!proceed) return;
+      }
+      plan.available -= total;
+      if (type === 'fixed') {
+        Object.entries(planned).forEach(([id, amt]) => plan.committed.fixed[id] = (plan.committed.fixed[id] || 0) + amt);
+      }
+      if (type === 'variable') {
+        state.variableEnvelopes.forEach(env => env.total += planned[env.id] || 0);
+        Object.entries(planned).forEach(([id, amt]) => plan.committed.variable[id] = (plan.committed.variable[id] || 0) + amt);
+      }
+      if (type === 'sinking') {
+        state.sinkingFunds.forEach(f => f.total += planned[f.id] || 0);
+        Object.entries(planned).forEach(([id, amt]) => plan.committed.sinking[id] = (plan.committed.sinking[id] || 0) + amt);
+      }
+      Object.keys(planned).forEach(k => planned[k] = 0);
+      render();
+    }
+
+    function addEnvelope() {
+      const name = prompt('Envelope name');
+      if (!name) return;
+      state.variableEnvelopes.push({ id: uid('env'), name, total: 0, notes: [] });
+      render();
+    }
+
+    function addSinkingFund() {
+      const name = prompt('Fund name');
+      if (!name) return;
+      const type = prompt('Type? (regular or purchase-child)', 'regular');
+      if (type === 'purchase-child') {
+        const parent = state.sinkingFunds.find(f => f.id === 'purchases');
+        parent.children.push({ id: uid('purchase'), name });
+      } else {
+        const note = prompt('Notes or target date');
+        state.sinkingFunds.push({ id: uid('fund'), name, total: 0, notes: note ? [note] : [] });
+      }
+      render();
+    }
+
+    function addFixedBill() {
+      const name = prompt('Fixed bill name');
+      if (!name) return;
+      const dueDate = prompt('Due date (YYYY-MM-DD)', todayISO());
+      state.bills.push({ id: uid('bill'), name, icon: '📄', dueDate, frequency: 'monthly', amount: 0, variable: false, reminder: true });
+      render();
+    }
+
+    function handleTransfers() {
+      const from = document.getElementById('transferFrom').value;
+      const to = document.getElementById('transferTo').value;
+      const amount = parseFloat(document.getElementById('transferAmount').value);
+      if (!from || !to || isNaN(amount) || amount <= 0) return alert('Fill transfer details.');
+      if (from === to) return alert('Choose different categories.');
+      const fromObj = findBucket(from);
+      const toObj = findBucket(to);
+      if (!fromObj || !toObj) return alert('Invalid transfer');
+      if (fromObj.total < amount) return alert('Not enough funds');
+      fromObj.total -= amount;
+      toObj.total += amount;
+      render();
+    }
+
+    function findBucket(id) {
+      return state.variableEnvelopes.find(e => e.id === id) || state.sinkingFunds.find(s => s.id === id);
+    }
+
+    function refreshTransferOptions() {
+      const fromSel = document.getElementById('transferFrom');
+      const toSel = document.getElementById('transferTo');
+      [fromSel, toSel].forEach(sel => sel.innerHTML = '');
+      const addOptions = (group, label) => {
+        const optGroupLabel = document.createElement('option');
+        optGroupLabel.disabled = true;
+        optGroupLabel.textContent = `— ${label} —`;
+        [fromSel, toSel].forEach(sel => sel.appendChild(optGroupLabel.cloneNode(true)));
+        group.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = `${item.name} ($${item.total.toFixed(2)})`;
+          fromSel.appendChild(opt.cloneNode(true));
+          toSel.appendChild(opt.cloneNode(true));
+        });
+      };
+      addOptions(state.variableEnvelopes, 'Variable Envelopes');
+      addOptions(state.sinkingFunds, 'Sinking Funds');
+    }
+
+    function enableReminders() {
+      state.remindersEnabled = !state.remindersEnabled;
+      document.getElementById('notificationBtn').textContent = state.remindersEnabled ? 'Reminders Enabled' : 'Enable Reminders';
+      alert(state.remindersEnabled ? 'Notifications will remind you of upcoming bills.' : 'Reminders turned off.');
+    }
+
+    function submitVariablePlanFlow() {
+      const payId = document.getElementById('variablePayPeriod').value;
+      if (!payId) return alert('Add a paycheck first.');
+      const plan = ensurePlan(payId);
+      const totalPlan = Object.values(plan.variable).reduce((a, b) => a + b, 0);
+      const confirmRollover = confirm('After this pay period, decide on rollover/sweep for remaining balances. Continue?');
+      if (!confirmRollover) return;
+      submitPlan('variable');
+      state.variableEnvelopes.forEach(env => {
+        if (env.total > 0) {
+          const rolloverChoice = prompt(`Rollover ${env.name}? Type "rollover", "variable-buffer", or "savings"`, 'rollover');
+          if (rolloverChoice === 'variable-buffer') {
+            const buffer = state.sinkingFunds.find(f => f.id === 'variable-buffer');
+            buffer.total += env.total;
+            env.total = 0;
+          } else if (rolloverChoice === 'savings') {
+            const savings = state.sinkingFunds.find(f => f.id === 'savings');
+            savings.total += env.total;
+            env.total = 0;
+          }
+        }
+      });
+      render();
+    }
+
+    function populatePayPeriodDefaults() {
+      const selectors = ['payPeriodSelector', 'fixedPayPeriod', 'variablePayPeriod', 'sinkingPayPeriod'];
+      selectors.forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel && sel.options.length && !sel.value) sel.selectedIndex = 0;
+      });
+    }
+
+    document.getElementById('addBillBtn').onclick = addBill;
+    document.getElementById('addPaycheckBtn').onclick = addPaycheck;
+    document.getElementById('notificationBtn').onclick = enableReminders;
+    document.getElementById('addEnvelope').onclick = addEnvelope;
+    document.getElementById('addSinking').onclick = addSinkingFund;
+    document.getElementById('addFixedBill').onclick = addFixedBill;
+    document.getElementById('submitFixedPlan').onclick = () => submitPlan('fixed');
+    document.getElementById('submitVariablePlan').onclick = submitVariablePlanFlow;
+    document.getElementById('submitSinkingPlan').onclick = () => submitPlan('sinking');
+    document.getElementById('submitTransfer').onclick = handleTransfers;
+    document.getElementById('payPeriodSelector').onchange = () => { renderSortedBills(); renderCalendar(); };
+    document.getElementById('fixedPayPeriod').onchange = renderFixed;
+    document.getElementById('variablePayPeriod').onchange = renderVariable;
+    document.getElementById('sinkingPayPeriod').onchange = renderSinking;
+
+    function render() {
+      renderCalendar();
+      renderSortedBills();
+      renderPaymentLog();
+      renderFixed();
+      renderVariable();
+      renderSinking();
+      refreshTransferOptions();
+      populatePayPeriodDefaults();
+      renderVariableSpendLog();
+    }
+
+    function init() {
+      refreshPayPeriodSelectors();
+      render();
+    }
+
+    init();
+  </script>
+</body>
+</html>
